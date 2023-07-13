@@ -1,0 +1,58 @@
+name: Wiki documentation
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'docs/wiki/**'
+  repository_dispatch:
+    types: [docs]
+  gollum:
+
+env:
+  WIKI_SOURCE_REPO: ${{ github.repository }}
+  WIKI_SOURCE_REPO_DIR: ${{ github.repository }}/docs/wiki
+  WIKI_TARGET_REPO: ${{ github.repository }}.wiki
+  GIT_AUTHOR_NAME: "github-actions"
+  GIT_AUTHOR_EMAIL: "github-actions@github.com"
+  GIT_COMMIT_MESSAGE: "docs: Sync wiki from docs/wiki"
+
+jobs:
+  job-sync-docs-to-wiki:
+    runs-on: ubuntu-latest
+    if: github.repository == '7mochi/wiki-test-2' && github.event_name != 'gollum'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Sync docs to wiki
+        uses: newrelic/wiki-sync-action@main
+        with:
+          source: docs/wiki
+          destination: wiki
+          branch: master
+          token: ${{ secrets.WIKI_TEST_TOKEN }}
+          gitAuthorName: ${{ env.GIT_AUTHOR_NAME }}
+          gitAuthorEmail: ${{ env.GIT_AUTHOR_EMAIL }}
+          commitMessage: ${{ env.GIT_COMMIT_MESSAGE }}
+  
+  job-sync-wiki-to-docs:
+    runs-on: ubuntu-latest
+    if: github.repository == '7mochi/wiki-test-2' && github.event_name == 'gollum'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: master
+
+      - name: Sync wiki to docs
+        uses: newrelic/wiki-sync-action@main
+        with:
+          source: wiki
+          destination: docs/wiki
+          branch: master
+          token: ${{ secrets.GITHUB_TOKEN }}
+          gitAuthorName: ${{ env.GIT_AUTHOR_NAME }}
+          gitAuthorEmail: ${{ env.GIT_AUTHOR_EMAIL }}
+          commitMessage: ${{ env.GIT_COMMIT_MESSAGE }}
